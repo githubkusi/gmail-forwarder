@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b2d">
+  <title>Forwarder Desk</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+  <script src="{{ url_for('static', path='/app.js') }}" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Forwarder Desk home">
+        <span class="brand-mark" aria-hidden="true">F</span>
+        <span>Forwarder<span class="brand-light">Desk</span></span>
+      </a>
+      <span class="connection"><span class="status-dot"></span> Workspace tools</span>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">GOOGLE WORKSPACE · GROUP ALIASES</p>
+      <h1>A clearer way to<br><span>route your mail.</span></h1>
+      <p class="hero-copy">Create a group forwarder or find one already in your Workspace.</p>
+    </section>
+
+    {% if notice %}<div class="banner success" role="status"><span class="banner-icon">✓</span><span>{{ notice }}</span></div>{% endif %}
+    {% if error %}<div class="banner failure" role="alert"><span class="banner-icon">!</span><span>{{ error }}</span></div>{% endif %}
+
+    <section class="workspace-grid" aria-label="Forwarder tools">
+      <article class="panel create-panel">
+        <div class="panel-heading">
+          <span class="step-number">01</span>
+          <div><p class="eyebrow">NEW ADDRESS</p><h2>Create a forwarder</h2></div>
+        </div>
+        <p class="panel-copy">Choose the Workspace domain, then enter a name for the new group address.</p>
+        <form action="/create" method="post" data-busy-form>
+          <fieldset class="domain-picker">
+            <legend>Forwarder domain</legend>
+            {% for domain in domains %}
+            <label class="domain-option">
+              <input type="radio" name="domain" value="{{ domain }}" {% if selected_domain == domain %}checked{% endif %}>
+              <span class="radio-ui"></span>
+              <span class="domain-label">{{ domain }}</span>
+            </label>
+            {% endfor %}
+          </fieldset>
+          <label class="field-label" for="forwarder-name">Forwarder name</label>
+          <div class="address-input">
+            <input id="forwarder-name" name="name" type="text" maxlength="254" value="{{ name }}" placeholder="e.g. invoices" autocomplete="off" required>
+            <span class="input-hint" data-domain-suffix>@{{ selected_domain }}</span>
+          </div>
+          <p class="field-hint">Enter a name or a full address in the selected domain.</p>
+          <button class="button button-primary" type="submit"><span>Create forwarder</span><span aria-hidden="true">↗</span></button>
+        </form>
+      </article>
+
+      <article class="panel search-panel">
+        <div class="panel-heading">
+          <span class="step-number">02</span>
+          <div><p class="eyebrow">EXISTING ADDRESSES</p><h2>Find a forwarder</h2></div>
+        </div>
+        <p class="panel-copy">Search all configured Workspace groups by part of an address.</p>
+        <form action="/search" method="post" data-busy-form>
+          <label class="field-label" for="search-query">Search term</label>
+          <div class="search-input">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input id="search-query" name="query" type="search" maxlength="100" value="{{ query }}" placeholder="name or domain" required>
+          </div>
+          <p class="field-hint">Matching addresses across titlis.org and lsass.ch.</p>
+          <button class="button button-secondary" type="submit"><span>Search groups</span><span aria-hidden="true">→</span></button>
+        </form>
+        {% if results is not none %}
+        <div class="results" aria-live="polite">
+          <div class="results-heading"><span>RESULTS</span><span>{{ results|length }}</span></div>
+          {% for address in results %}
+          <div class="result-row"><span class="result-address">{{ address }}</span><button type="button" class="copy-button" data-copy="{{ address }}" aria-label="Copy {{ address }}">Copy</button></div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </article>
+    </section>
+
+    <footer><span>Forwarder Desk</span><span>GAM-powered · Self-hosted</span></footer>
+  </main>
+</body>
+</html>
