@@ -33,24 +33,22 @@
           <span class="step-number">01</span>
           <div><p class="eyebrow">NEW ADDRESS</p><h2>Create a forwarder</h2></div>
         </div>
-        <p class="panel-copy">Choose the Workspace domain, then enter a name for the new group address.</p>
+        <p class="panel-copy">Choose the mailbox that will own the group, then enter a name for the new address.</p>
         <form action="/create" method="post" data-busy-form>
-          <fieldset class="domain-picker">
-            <legend>Forwarder domain</legend>
-            {% for domain in domains %}
-            <label class="domain-option">
-              <input type="radio" name="domain" value="{{ domain }}" {% if selected_domain == domain %}checked{% endif %}>
-              <span class="radio-ui"></span>
-              <span class="domain-label">{{ domain }}</span>
-            </label>
+          <label class="field-label" for="email-recipient">Email recipient</label>
+          <div class="recipient-select-wrap">
+            <select id="email-recipient" name="recipient" data-recipient required>
+            {% for recipient in recipients %}
+              <option value="{{ recipient }}" {% if selected_recipient|lower == recipient|lower %}selected{% endif %}>{{ recipient }}</option>
             {% endfor %}
-          </fieldset>
+            </select>
+          </div>
           <label class="field-label" for="forwarder-name">Forwarder name</label>
           <div class="address-input">
-            <input id="forwarder-name" name="name" type="text" maxlength="254" value="{{ name }}" placeholder="e.g. invoices" autocomplete="off" required>
+            <input id="forwarder-name" name="name" type="text" maxlength="64" value="{{ name }}" placeholder="e.g. invoices" autocomplete="off" required>
             <span class="input-hint" data-domain-suffix>@{{ selected_domain }}</span>
           </div>
-          <p class="field-hint">Enter a name or a full address in the selected domain.</p>
+          <p class="field-hint">Enter only the name; the selected recipient’s domain is appended.</p>
           <button class="button button-primary" type="submit"><span>Create forwarder</span><span aria-hidden="true">↗</span></button>
         </form>
       </article>
@@ -67,7 +65,7 @@
             <span class="search-icon" aria-hidden="true">⌕</span>
             <input id="search-query" name="query" type="search" maxlength="100" value="{{ query }}" placeholder="name or domain" required>
           </div>
-          <p class="field-hint">Matching addresses across titlis.org and lsass.ch.</p>
+          <p class="field-hint">Matching addresses across all configured Workspace domains.</p>
           <button class="button button-secondary" type="submit"><span>Search groups</span><span aria-hidden="true">→</span></button>
         </form>
         {% if results is not none %}

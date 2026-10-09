@@ -4,8 +4,11 @@ import os
 import re
 from dataclasses import dataclass
 
-DOMAINS = ("titlis.org", "lsass.ch")
-_EMAIL_RE = re.compile(r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+$")
+_EMAIL_RE = re.compile(
+    r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@"
+    r"(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+"
+    r"[A-Za-z]{2,63}$"
+)
 _LOCAL_RE = re.compile(r"^[A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]+$")
 
 
@@ -15,63 +18,52 @@ class ConfigurationError(ValueError):
 
 @dataclass(frozen=True)
 class Settings:
-    owner_titlis: str
-    owner_lsass: str
+    recipients: tuple[str, ...]
 
     @classmethod
     def from_env(cls) -> Settings:
-        return cls(
-            owner_titlis=os.getenv("TITLIS_ORG_OWNER", "").strip(),
-            owner_lsass=os.getenv("LSASS_CH_OWNER", "").strip(),
-        )
+        return cls(tuple(os.getenv("EMAIL_RECIPIENTS", "").split()))
 
-    def owner_for(self, domain: str) -> str:
-        if domain == "titlis.org":
-            return self.owner_titlis
-        if domain == "lsass.ch":
-            return self.owner_lsass
-        raise ValueError("Choose one of the configured domains.")
+    def recipient(self, selected: str) -> str:
+        key = selected.strip().casefold()
+        for configured in self.recipients:
+            if configured.casefold() == key:
+                return configured
+        raise ValueError("Choose one of the configured email recipients.")
+
+    def domain_for_recipient(self, selected: str) -> str:
+        return self.recipient(selected).rsplit("@", 1)[1].casefold()
 
     def validate(self) -> None:
-        for domain, owner in (
-            ("titlis.org", self.owner_titlis),
-            ("lsass.ch", self.owner_lsass),
-        ):
-            variable = "TITLIS_ORG_OWNER" if domain == "titlis.org" else "LSASS_CH_OWNER"
-            if not owner:
-                raise ConfigurationError(f"Set {variable} to the owner mailbox at {domain}.")
-            if not _EMAIL_RE.fullmatch(owner) or owner.count("@") != 1:
-                raise ConfigurationError(f"The configured owner for {domain} is not a valid email address.")
-            if owner.rsplit("@", 1)[1].casefold() != domain:
-                raise ConfigurationError(f"The configured owner mailbox must use the {domain} domain.")
+        if not self.recipients:
+            raise ConfigurationError(
+                'Set EMAIL_RECIPIENTS to a space-separated list of email addresses, '
+                'for example: EMAIL_RECIPIENTS="me@example.com you@example.com".'
+            )
+
+        seen: set[str] = set()
+        for address in self.recipients:
+            key = address.casefold()
+            if not _EMAIL_RE.fullmatch(address) or address.count("@") != 1:
+                raise ConfigurationError(f"Invalid email address in EMAIL_RECIPIENTS: {address!r}.")
+            if key in seen:
+                raise ConfigurationError(f"Duplicate email recipient in EMAIL_RECIPIENTS: {address!r}.")
+            seen.add(key)
 
 
 def normalize_forwarder(name: str, domain: str) -> str:
-    """Turn a local part into an address, or validate a supplied full address."""
-    if domain not in DOMAINS:
-        raise ValueError("Choose one of the configured domains.")
-
+    """Append the selected recipient's domain to a valid local forwarder name."""
     name = name.strip()
     if not name:
         raise ValueError("Enter a forwarder name.")
-
-    if "@" in name:
-        if name.count("@") != 1:
-            raise ValueError("Enter a valid forwarder name or email address.")
-        local, supplied_domain = name.rsplit("@", 1)
-        if supplied_domain.casefold() != domain:
-            raise ValueError(f"The address must use the selected domain, {domain}.")
-    else:
-        local = name
-
     if (
-        not local
-        or len(local) > 64
-        or not _LOCAL_RE.fullmatch(local)
-        or local.startswith(".")
-        or local.endswith(".")
-        or ".." in local
+        "@" in name
+        or len(name) > 64
+        or not _LOCAL_RE.fullmatch(name)
+        or name.startswith(".")
+        or name.endswith(".")
+        or ".." in name
     ):
-        raise ValueError("Use a valid email name (letters, numbers, dots, and email-safe symbols).")
+        raise ValueError("Enter a valid forwarder name only (without @ or a domain).")
 
-    return f"{local}@{domain}"
+    return f"{name}@{domain.casefold()}"

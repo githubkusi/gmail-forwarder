@@ -1,6 +1,6 @@
 # Gmail Forwarder Web
 
-A self-hosted interface for creating Google Groups that act as mail forwarders and searching existing groups. The app includes GAM7 in the same container and uses one server-side GAM authorization. It is limited to `titlis.org` and `lsass.ch`.
+A self-hosted interface for creating Google Groups that act as mail forwarders and searching existing groups. The app includes GAM7 in the same container and uses one server-side GAM authorization. Configure the eligible group owners with `EMAIL_RECIPIENTS`.
 
 ## Requirements
 
@@ -11,7 +11,7 @@ A self-hosted interface for creating Google Groups that act as mail forwarders a
 
 ## Configure and authorize GAM
 
-1. Copy `.env.example` to `.env` and set `TITLIS_ORG_OWNER` and `LSASS_CH_OWNER` to the owner mailboxes. Each mailbox must use its matching domain. Keep `.env` private; it is ignored by Git.
+1. Copy `.env.example` to `.env` and set `EMAIL_RECIPIENTS` to a whitespace-separated list of email addresses. The selected address is added as the new group's owner, and its domain is used for the forwarder address. Keep `.env` private; it is ignored by Git.
 2. Set `GAM_AUTH_DIR` in `.env` to a host directory for the two OAuth files (the example uses `./gam_auth`). GAM's `gam.cfg` and `gamcache` are stored separately in the Docker-managed `gam_state` volume; GAM's work directory is in `gam_work`. Compose bind-mounts the host credential directory at `/run/gam-credentials`, sets GAM's `GAMUSERCONFIGDIR` there, and sets `GAMCFGDIR=/var/lib/gam` for the named config volume. The credential directory must be accessible to the non-root `app` account (UID/GID `999:999`) because GAM may lock or refresh `oauth2.txt`. On Linux, grant UID 999 access with ownership or ACLs rather than making credentials world-writable. For example, with the default `./gam_auth` path:
 
    ```sh
@@ -42,7 +42,7 @@ A self-hosted interface for creating Google Groups that act as mail forwarders a
    In either setup path, only `client_secrets.json` and `oauth2.txt` (plus GAM's transient lock file) live in the host directory configured by `GAM_AUTH_DIR`. GAM's `gam.cfg` and cache live in the `gam_state` volume. Back up the credential directory and both Docker volumes securely.
 4. Set `PORT` in `.env` to the host port you want (default `8000`), start the app with `docker compose up -d --build`, and open `http://127.0.0.1:<PORT>`. `PORT` changes only the host-side port; the app listens on port `8000` inside the container and the health check uses that internal port. Compose binds the host port on loopback only, so other machines cannot connect directly. For remote access, place it behind an authenticated reverse proxy and configure the network explicitly.
 
-The UI creates a group at `name@selected-domain`, sets `whoCanPostMessage` to `ANYONE_CAN_POST` (same behavior as the CLI), then adds that domain's configured mailbox as owner. Search checks matching email addresses in groups across both domains.
+The UI creates a group at `name@recipient-domain`, sets `whoCanPostMessage` to `ANYONE_CAN_POST` (same behavior as the CLI), then adds the selected email recipient as owner. The forwarder-name field accepts only the local part; the selected recipient's domain is appended. Search checks matching email addresses across all Workspace groups.
 
 ## Security and operations
 
@@ -55,6 +55,6 @@ The UI creates a group at `name@selected-domain`, sets `whoCanPostMessage` to `A
 
 ## Local development
 
-Use Python 3.13 and install the project with its development extras (for example, `uv sync --extra dev`). Set both owner mailbox environment variables before starting the app. Run `uv run uvicorn gmail_forwarder_web.web:app --reload --app-dir src` to start locally. GAM must also be configured and authorized for live operations.
+Use Python 3.13 and install the project with its development extras (for example, `uv sync --extra dev`). Set `EMAIL_RECIPIENTS` before starting the app. Run `uv run uvicorn gmail_forwarder_web.web:app --reload --app-dir src` to start locally. GAM must also be configured and authorized for live operations.
 
 Run the mocked tests with `uv run pytest`. Tests do not call Google or require GAM credentials.

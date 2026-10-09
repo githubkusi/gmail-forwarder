@@ -27,11 +27,12 @@ class ForwarderService:
     def __post_init__(self) -> None:
         self._gam_lock = threading.Lock()
 
-    def create(self, name: str, domain: str) -> tuple[str, str]:
+    def create(self, name: str, selected_recipient: str) -> tuple[str, str]:
+        recipient = self.settings.recipient(selected_recipient)
+        domain = recipient.rsplit("@", 1)[1].casefold()
         address = normalize_forwarder(name, domain)
-        owner = self.settings.owner_for(domain)
         with self._gam_lock:
-            output = self.gateway.add_forwarder(address, owner)
+            output = self.gateway.add_forwarder(address, recipient)
         return address, output
 
     def search(self, pattern: str) -> list[str]:

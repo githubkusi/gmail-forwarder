@@ -21,11 +21,13 @@ document.querySelectorAll("[data-copy]").forEach((button) => {
   });
 });
 
+const recipientSelect = document.querySelector("[data-recipient]");
 const domainSuffix = document.querySelector("[data-domain-suffix]");
-if (domainSuffix) {
-  document.querySelectorAll('input[name="domain"]').forEach((radio) => {
-    radio.addEventListener("change", () => {
-      if (radio.checked) domainSuffix.textContent = `@${radio.value}`;
-    });
-  });
+if (recipientSelect && domainSuffix) {
+  const updateSuffix = () => {
+    const recipient = recipientSelect.value;
+    domainSuffix.textContent = recipient.includes("@") ? `@${recipient.split("@").pop()}` : "";
+  };
+  recipientSelect.addEventListener("change", updateSuffix);
+  updateSuffix();
 }

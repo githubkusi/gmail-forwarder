@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.concurrency import run_in_threadpool
 
-from .config import DOMAINS, ConfigurationError, Settings
+from .config import ConfigurationError, Settings
 from .gam_client import GamClient, GamOperationError
 from .service import ForwarderService, Gateway
 
@@ -40,15 +40,16 @@ def create_app(settings: Settings | None = None, gateway: Gateway | None = None)
         name: str = "",
         query: str = "",
         results: list[str] | None = None,
-        selected_domain: str = DOMAINS[0],
+        selected_recipient: str | None = None,
         status_code: int = 200,
     ) -> HTMLResponse:
         return _templates.TemplateResponse(
             request=request,
             name="index.html",
             context={
-                "domains": DOMAINS,
-                "selected_domain": selected_domain,
+                "recipients": configured.recipients,
+                "selected_recipient": selected_recipient or (configured.recipients[0] if configured.recipients else ""),
+                "selected_domain": configured.domain_for_recipient(selected_recipient or configured.recipients[0]) if configured.recipients else "",
                 "notice": notice,
                 "error": error,
                 "name": name,
@@ -71,23 +72,27 @@ def create_app(settings: Settings | None = None, gateway: Gateway | None = None)
     async def create(request: Request):
         data = await form_data(request)
         name = data.get("name", "")
-        domain = data.get("domain", "")
+        recipient = data.get("recipient", "")
         try:
-            address, _ = await run_in_threadpool(service.create, name, domain)
-            return render(request, notice=f"Forwarder created: {address}", selected_domain=domain)
+            address, _ = await run_in_threadpool(service.create, name, recipient)
+            return render(
+                request,
+                notice=f"Forwarder created: {address}",
+                selected_recipient=recipient,
+            )
         except ValueError as exc:
             return render(
                 request,
                 error=str(exc),
                 name=name,
-                selected_domain=domain if domain in DOMAINS else DOMAINS[0],
+                selected_recipient=recipient if any(recipient.casefold() == item.casefold() for item in configured.recipients) else None,
             )
         except GamOperationError as exc:
             return render(
                 request,
                 error=str(exc),
                 name=name,
-                selected_domain=domain if domain in DOMAINS else DOMAINS[0],
+                selected_recipient=recipient,
                 status_code=502,
             )
         except Exception:
@@ -95,7 +100,7 @@ def create_app(settings: Settings | None = None, gateway: Gateway | None = None)
                 request,
                 error="GAM could not complete the request. Check the server logs and GAM authorization.",
                 name=name,
-                selected_domain=domain if domain in DOMAINS else DOMAINS[0],
+                selected_recipient=recipient,
                 status_code=502,
             )
 

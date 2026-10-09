@@ -25,24 +25,24 @@ def test_add_forwarder_uses_expected_gam_sequence(monkeypatch):
     fake = FakeGamModule()
     monkeypatch.setitem(sys.modules, "gam", fake)
 
-    output = GamClient().add_forwarder("team@titlis.org", "admin@titlis.org")
+    output = GamClient().add_forwarder("team@example.org", "admin@example.org")
 
     assert output == "GAM output\nGAM output"
     assert fake.commands[0][4:] == [
         "create",
         "group",
-        "team@titlis.org",
+        "team@example.org",
         "whoCanPostMessage",
         "ANYONE_CAN_POST",
     ]
     assert fake.commands[1][4:] == [
         "update",
         "group",
-        "team@titlis.org",
+        "team@example.org",
         "add",
         "owner",
         "user",
-        "admin@titlis.org",
+        "admin@example.org",
     ]
 
 
@@ -50,8 +50,8 @@ def test_owner_assignment_error_is_reported_as_partial(monkeypatch):
     fake = FakeGamModule(fail_on_call=2)
     monkeypatch.setitem(sys.modules, "gam", fake)
 
-    with pytest.raises(GamOperationError, match="group team@titlis.org was created") as error:
-        GamClient().add_forwarder("team@titlis.org", "admin@titlis.org")
+    with pytest.raises(GamOperationError, match="group team@example.org was created") as error:
+        GamClient().add_forwarder("team@example.org", "admin@example.org")
 
     assert error.value.partial is True
 
