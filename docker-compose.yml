@@ -6,11 +6,13 @@ services:
       - .env
     environment:
       GAMCFGDIR: /var/lib/gam
-      GAMUSERCONFIGDIR: /run/gam-credentials
+      GAMUSERCONFIGDIR: /var/lib/gam-auth
+      CLIENTSECRETS: /run/gam-client/client_secrets.json
       HOME: /home/app
     volumes:
       - gam_state:/var/lib/gam
-      - "${GAM_AUTH_DIR:-./gam_auth}:/run/gam-credentials"
+      - gam_auth_state:/var/lib/gam-auth
+      - "${GAM_AUTH_DIR:-./gam_auth}/client_secrets.json:/run/gam-client/client_secrets.json:ro"
       - gam_work:/var/lib/gam-work
     expose:
       - "8000"
@@ -25,4 +27,5 @@ services:
 
 volumes:
   gam_state:
+  gam_auth_state:
   gam_work:

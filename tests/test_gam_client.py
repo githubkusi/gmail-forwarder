@@ -56,59 +56,58 @@ def test_owner_assignment_error_is_reported_as_partial(monkeypatch):
     assert error.value.partial is True
 
 
-def test_reuse_existing_credentials_skips_project_and_oauth(monkeypatch, tmp_path):
+def test_initial_setup_uses_readonly_client_secret_and_persistent_oauth_file(monkeypatch, tmp_path):
     fake = FakeGamModule()
     monkeypatch.setitem(sys.modules, "gam", fake)
-    monkeypatch.setenv("GAMCFGDIR", str(tmp_path))
-    credentials_dir = tmp_path / "credentials"
-    credentials_dir.mkdir()
-    monkeypatch.setenv("GAMUSERCONFIGDIR", str(credentials_dir))
+    monkeypatch.setenv("GAMCFGDIR", str(tmp_path / "gam-config"))
+    client_file = tmp_path / "mounted-client" / "client_secrets.json"
+    client_file.parent.mkdir()
+    client_file.write_text("{}", encoding="utf-8")
+    user_config_dir = tmp_path / "gam-auth-volume"
+    monkeypatch.setenv("GAMUSERCONFIGDIR", str(user_config_dir))
+    monkeypatch.setenv("CLIENTSECRETS", str(client_file))
     monkeypatch.setenv("GAM_WORK_DIR", str(tmp_path / "work"))
-    (credentials_dir / "client_secrets.json").write_text("{}", encoding="utf-8")
-    (credentials_dir / "oauth2.txt").write_text("{}", encoding="utf-8")
 
     from gmail_forwarder_web.gam_client import initialize_gam
 
-    initialize_gam(reuse_existing_credentials=True)
+    initialize_gam()
 
-    commands = [call[1:] for call in fake.commands]
-    assert ["create", "project"] not in commands
-    assert ["oauth", "create"] not in commands
-    setup_config = fake.commands[0]
-    assert setup_config[setup_config.index("config_dir") + 1] == str(credentials_dir)
-    assert setup_config[setup_config.index("client_secrets_json") + 1] == str(
-        credentials_dir / "client_secrets.json"
-    )
-    assert ["print", "groups", "showitemcountonly"] in [call[4:] for call in fake.commands if call[1:3] == ["redirect", "stdout"]]
+    config_command = fake.commands[0][1:]
+    assert config_command[config_command.index("config_dir") + 1] == str(user_config_dir)
+    assert config_command[config_command.index("client_secrets_json") + 1] == str(client_file)
+    assert config_command[config_command.index("oauth2_txt") + 1] == str(user_config_dir / "oauth2.txt")
+    assert fake.commands[1][1:] == ["oauth", "create"]
+    assert ["print", "groups", "showitemcountonly"] in [
+        call[4:] for call in fake.commands if call[1:3] == ["redirect", "stdout"]
+    ]
 
 
-def test_reuse_existing_credentials_requires_both_files(monkeypatch, tmp_path):
+def test_initial_setup_requires_client_secret_file(monkeypatch, tmp_path):
     fake = FakeGamModule()
     monkeypatch.setitem(sys.modules, "gam", fake)
-    monkeypatch.setenv("GAMCFGDIR", str(tmp_path))
-    credentials_dir = tmp_path / "credentials"
-    credentials_dir.mkdir()
-    monkeypatch.setenv("GAMUSERCONFIGDIR", str(credentials_dir))
+    monkeypatch.setenv("GAMCFGDIR", str(tmp_path / "gam-config"))
+    monkeypatch.setenv("GAMUSERCONFIGDIR", str(tmp_path / "gam-auth-volume"))
+    monkeypatch.setenv("CLIENTSECRETS", str(tmp_path / "missing-client_secrets.json"))
     monkeypatch.setenv("GAM_WORK_DIR", str(tmp_path / "work"))
 
     from gmail_forwarder_web.gam_client import initialize_gam
 
-    with pytest.raises(RuntimeError, match="Cannot reuse GAM credentials"):
-        initialize_gam(reuse_existing_credentials=True)
+    with pytest.raises(RuntimeError, match="GAM OAuth client file not found"):
+        initialize_gam()
 
 
-def test_reuse_existing_credentials_reports_failed_group_check(monkeypatch, tmp_path):
-    fake = FakeGamModule(fail_on_call=2)
+def test_initial_setup_reports_failed_authorization_check(monkeypatch, tmp_path):
+    fake = FakeGamModule(fail_on_call=3)
     monkeypatch.setitem(sys.modules, "gam", fake)
-    monkeypatch.setenv("GAMCFGDIR", str(tmp_path))
-    credentials_dir = tmp_path / "credentials"
-    credentials_dir.mkdir()
-    monkeypatch.setenv("GAMUSERCONFIGDIR", str(credentials_dir))
+    monkeypatch.setenv("GAMCFGDIR", str(tmp_path / "gam-config"))
+    client_file = tmp_path / "mounted-client" / "client_secrets.json"
+    client_file.parent.mkdir()
+    client_file.write_text("{}", encoding="utf-8")
+    monkeypatch.setenv("GAMUSERCONFIGDIR", str(tmp_path / "gam-auth-volume"))
+    monkeypatch.setenv("CLIENTSECRETS", str(client_file))
     monkeypatch.setenv("GAM_WORK_DIR", str(tmp_path / "work"))
-    (credentials_dir / "client_secrets.json").write_text("{}", encoding="utf-8")
-    (credentials_dir / "oauth2.txt").write_text("{}", encoding="utf-8")
 
     from gmail_forwarder_web.gam_client import initialize_gam
 
-    with pytest.raises(RuntimeError, match="could not list Workspace groups"):
-        initialize_gam(reuse_existing_credentials=True)
+    with pytest.raises(RuntimeError, match="OAuth authorization completed"):
+        initialize_gam()
