@@ -24,7 +24,7 @@
       <p class="hero-copy">Create a group forwarder or find one already in your Workspace.</p>
     </section>
 
-    {% if notice %}<div class="banner success" role="status"><span class="banner-icon">✓</span><span>{{ notice }}</span></div>{% endif %}
+    {% if notice %}<div class="banner success" role="status" {% if copy_address %}data-copy-created="{{ copy_address }}"{% endif %}><span class="banner-icon">✓</span><span {% if copy_address %}data-copy-message{% endif %}>{{ notice }}</span>{% if copy_address %}<button type="button" class="copy-button" data-copy="{{ copy_address }}" aria-label="Copy {{ copy_address }}">Copy address</button>{% endif %}</div>{% endif %}
     {% if error %}<div class="banner failure" role="alert"><span class="banner-icon">!</span><span>{{ error }}</span></div>{% endif %}
 
     <section class="workspace-grid" aria-label="Forwarder tools">

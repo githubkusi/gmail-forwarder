@@ -73,6 +73,8 @@ def test_create_derives_domain_and_uses_selected_recipient_as_owner():
         )
     assert response.status_code == 200
     assert "billing@another.test" in response.text
+    assert 'data-copy-created="billing@another.test"' in response.text
+    assert 'data-copy="billing@another.test"' in response.text
     assert gateway.created == [("billing@another.test", "reports@another.test")]
 
 

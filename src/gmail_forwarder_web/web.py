@@ -40,6 +40,7 @@ def create_app(settings: Settings | None = None, gateway: Gateway | None = None)
         name: str = "",
         query: str = "",
         results: list[str] | None = None,
+        copy_address: str | None = None,
         selected_recipient: str | None = None,
         status_code: int = 200,
     ) -> HTMLResponse:
@@ -55,6 +56,7 @@ def create_app(settings: Settings | None = None, gateway: Gateway | None = None)
                 "name": name,
                 "query": query,
                 "results": results,
+                "copy_address": copy_address,
             },
             status_code=status_code,
         )
@@ -78,6 +80,7 @@ def create_app(settings: Settings | None = None, gateway: Gateway | None = None)
             return render(
                 request,
                 notice=f"Forwarder created: {address}",
+                copy_address=address,
                 selected_recipient=recipient,
             )
         except ValueError as exc:

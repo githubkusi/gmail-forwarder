@@ -21,6 +21,19 @@ document.querySelectorAll("[data-copy]").forEach((button) => {
   });
 });
 
+const createdNotice = document.querySelector("[data-copy-created]");
+if (createdNotice && navigator.clipboard?.writeText) {
+  const address = createdNotice.dataset.copyCreated;
+  navigator.clipboard.writeText(address).then(() => {
+    const message = createdNotice.querySelector("[data-copy-message]");
+    const copyButton = createdNotice.querySelector("[data-copy]");
+    if (message) message.textContent = `Forwarder created and copied to the clipboard: ${address}`;
+    if (copyButton) copyButton.textContent = "Copied";
+  }).catch(() => {
+    // Keep the visible Copy address button as a user-gesture fallback.
+  });
+}
+
 const recipientSelect = document.querySelector("[data-recipient]");
 const domainSuffix = document.querySelector("[data-domain-suffix]");
 if (recipientSelect && domainSuffix) {
