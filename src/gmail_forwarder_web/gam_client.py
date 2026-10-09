@@ -5,6 +5,11 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+OAUTH_SCOPES = (
+    "https://www.googleapis.com/auth/admin.directory.group",
+    "https://www.googleapis.com/auth/apps.groups.settings",
+)
+
 
 class GamOperationError(RuntimeError):
     def __init__(self, stage: str, message: str, *, partial: bool = False) -> None:
@@ -109,7 +114,7 @@ def initialize_gam() -> None:
             "save",
             "verify",
         ],
-        ["oauth", "create"],
+        ["oauth", "create", "scopes", ",".join(OAUTH_SCOPES)],
     )
     for command in commands:
         result = gam.CallGAMCommand(["gam", *command])

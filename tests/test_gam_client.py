@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 import pytest
 
-from gmail_forwarder_web.gam_client import GamClient, GamOperationError
+from gmail_forwarder_web.gam_client import GamClient, GamOperationError, OAUTH_SCOPES
 
 
 class FakeGamModule:
@@ -76,7 +76,7 @@ def test_initial_setup_uses_readonly_client_secret_and_persistent_oauth_file(mon
     assert config_command[config_command.index("config_dir") + 1] == str(user_config_dir)
     assert config_command[config_command.index("client_secrets_json") + 1] == str(client_file)
     assert config_command[config_command.index("oauth2_txt") + 1] == str(user_config_dir / "oauth2.txt")
-    assert fake.commands[1][1:] == ["oauth", "create"]
+    assert fake.commands[1][1:] == ["oauth", "create", "scopes", ",".join(OAUTH_SCOPES)]
     assert ["print", "groups", "showitemcountonly"] in [
         call[4:] for call in fake.commands if call[1:3] == ["redirect", "stdout"]
     ]
