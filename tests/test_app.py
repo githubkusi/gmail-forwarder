@@ -103,6 +103,19 @@ def test_create_page_shows_email_recipient_selector():
     assert "@example.org" in response.text
 
 
+def test_static_assets_use_relative_paths_and_are_served():
+    with TestClient(configured_app()) as client:
+        response = client.get("/")
+        css = client.get("/static/style.css")
+        javascript = client.get("/static/app.js")
+
+    assert 'href="static/style.css"' in response.text
+    assert 'src="static/app.js"' in response.text
+    assert css.status_code == 200
+    assert "--canvas" in css.text
+    assert javascript.status_code == 200
+
+
 def test_search_matches_all_domains_and_deduplicates():
     gateway = FakeGam()
     gateway.groups += "\nBILLING@EXAMPLE.ORG"
