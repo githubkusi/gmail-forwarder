@@ -58,3 +58,7 @@ The UI creates a group at `name@recipient-domain`, sets `whoCanPostMessage` to `
 Use Python 3.13 and install the project with its development extras (for example, `uv sync --extra dev`). Set `EMAIL_RECIPIENTS` before starting the app. Run `uv run uvicorn gmail_forwarder_web.web:app --reload --app-dir src` to start locally. GAM must also be configured and authorized for live operations.
 
 Run the mocked tests with `uv run pytest`. Tests do not call Google or require GAM credentials.
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 or, at your option, any later version. See [LICENSE](LICENSE).
