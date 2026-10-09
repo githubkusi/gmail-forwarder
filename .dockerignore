@@ -3,6 +3,9 @@
 .pytest_cache
 __pycache__
 .env
+gam_cfg
+gam_credentials
+gam_auth
 *.py[cod]
 .ruff_cache
 tests

@@ -6,21 +6,22 @@ services:
       - .env
     environment:
       GAMCFGDIR: /var/lib/gam
+      GAMUSERCONFIGDIR: /run/gam-credentials
       HOME: /home/app
     volumes:
       - gam_state:/var/lib/gam
+      - "${GAM_AUTH_DIR:-./gam_auth}:/run/gam-credentials"
       - gam_work:/var/lib/gam-work
     expose:
       - "8000"
+    ports:
+      - "127.0.0.1:${PORT:-8000}:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 15s
-    # Publish a host port only for local/trusted use or behind an authenticated reverse proxy.
-    # ports:
-    #   - "127.0.0.1:8000:8000"
 
 volumes:
   gam_state:

@@ -1,4 +1,7 @@
 .env
+gam_cfg/
+gam_credentials/
+gam_auth/
 .venv/
 .pytest_cache/
 .ruff_cache/

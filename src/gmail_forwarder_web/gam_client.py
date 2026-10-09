@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 
 
 class GamOperationError(RuntimeError):
@@ -65,13 +66,64 @@ class GamClient:
         return self._call(["print", "groups"])
 
 
-def initialize_gam() -> None:
-    """Interactively bootstrap GAM7's config, project, and OAuth credentials."""
+def initialize_gam(*, reuse_existing_credentials: bool = False) -> None:
+    """Bootstrap GAM7, or validate an existing GAM client and OAuth token."""
     client = GamClient()
     client.setup()
     gam = client._gam()
-    work_dir = "/var/lib/gam-work"
+    work_dir = os.getenv("GAM_WORK_DIR", "/var/lib/gam-work")
     os.makedirs(work_dir, exist_ok=True)
+
+    if reuse_existing_credentials:
+        credentials_dir = Path(
+            os.path.expanduser(
+                os.getenv("GAMUSERCONFIGDIR", os.getenv("GAMCFGDIR", "~/.gam"))
+            )
+        )
+        client_secrets = credentials_dir / "client_secrets.json"
+        oauth_token = credentials_dir / "oauth2.txt"
+        required_files = (client_secrets, oauth_token)
+        missing = [str(path) for path in required_files if not path.is_file()]
+        if missing:
+            raise RuntimeError(
+                "Cannot reuse GAM credentials; missing " + " and ".join(missing)
+                + ". Place both files in GAMUSERCONFIGDIR (the mounted GAM credentials directory) and retry."
+            )
+
+        commands = (
+            [
+                "config",
+                "no_browser",
+                "true",
+                "config_dir",
+                str(credentials_dir),
+                "client_secrets_json",
+                str(client_secrets),
+                "oauth2_txt",
+                str(oauth_token),
+                "drive_dir",
+                work_dir,
+                "save",
+                "verify",
+            ],
+        )
+        for command in commands:
+            result = gam.CallGAMCommand(["gam", *command])
+            if result:
+                raise RuntimeError(
+                    f"GAM setup command {' '.join(command)} failed with status {result}."
+                )
+
+        try:
+            client._call(["print", "groups", "showitemcountonly"])
+        except RuntimeError as exc:
+            raise RuntimeError(
+                "Existing GAM credentials were found, but GAM could not list Workspace groups. "
+                "Check token validity, configured OAuth scopes, and administrator access. "
+                f"GAM reported: {exc}"
+            ) from exc
+        return
+
     commands = (
         ["config", "no_browser", "true", "save", "verify"],
         ["config", "drive_dir", work_dir, "save", "verify"],
