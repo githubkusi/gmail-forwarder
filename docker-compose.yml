@@ -7,11 +7,11 @@ services:
     environment:
       GAMCFGDIR: /var/lib/gam
       GAMUSERCONFIGDIR: /var/lib/gam-auth
-      CLIENTSECRETS: /run/gam-client/client_secrets.json # Needed by GAM
+      CLIENTSECRETS: /run/gam-client/client_secrets.json # Env var needed by GAM
     volumes:
       - gam_state:/var/lib/gam
       - gam_auth_state:/var/lib/gam-auth
-      - "${GAM_AUTH_DIR:-./gam_auth}/client_secrets.json:/run/gam-client/client_secrets.json:ro"
+      - gam_client_secrets:/run/gam-client:ro
       - gam_work:/var/lib/gam-work
     expose:
       - "8000"
@@ -33,16 +33,17 @@ services:
       GAMCFGDIR: /var/lib/gam
       GAMUSERCONFIGDIR: /var/lib/gam-auth
       CLIENTSECRETS: /run/gam-client/client_secrets.json
-    command: ["python", "-m", "gmail_forwarder_web.gam_setup"]
+    entrypoint: ["python", "-m", "gmail_forwarder_web.gam_setup"]
     stdin_open: true
     tty: true
     volumes:
       - gam_state:/var/lib/gam
       - gam_auth_state:/var/lib/gam-auth
-      - "${GAM_AUTH_DIR:-./gam_auth}:/run/gam-client"
+      - gam_client_secrets:/run/gam-client
       - gam_work:/var/lib/gam-work
 
 volumes:
   gam_state:
   gam_auth_state:
+  gam_client_secrets:
   gam_work:

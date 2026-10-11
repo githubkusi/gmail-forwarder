@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,6 +10,12 @@ OAUTH_SCOPES = (
     "https://www.googleapis.com/auth/admin.directory.group",
     "https://www.googleapis.com/auth/apps.groups.settings",
 )
+GAM_PROJECT_APIS = (
+    "admin.googleapis.com",
+    "groupssettings.googleapis.com",
+    "iam.googleapis.com",
+)
+IMPORTED_CLIENT_SECRETS = Path("/import/client_secrets.json")
 
 
 class GamOperationError(RuntimeError):
@@ -92,16 +99,47 @@ def initialize_gam() -> None:
 
     os.makedirs(work_dir, exist_ok=True)
     user_config_dir.mkdir(parents=True, exist_ok=True)
-    if not client_secrets.is_file():
-        client_secrets.parent.mkdir(parents=True, exist_ok=True)
+    client_secrets.parent.mkdir(parents=True, exist_ok=True)
+    if IMPORTED_CLIENT_SECRETS.is_file():
+        if client_secrets.exists():
+            raise RuntimeError(
+                f"GAM OAuth client file already exists at {client_secrets}; refusing to overwrite it."
+            )
+        with IMPORTED_CLIENT_SECRETS.open("rb") as source:
+            file_descriptor = os.open(
+                client_secrets,
+                os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+                0o600,
+            )
+            try:
+                with os.fdopen(file_descriptor, "wb") as target:
+                    shutil.copyfileobj(source, target)
+            except Exception:
+                client_secrets.unlink(missing_ok=True)
+                raise
+    elif not client_secrets.is_file():
         print(f"No GAM OAuth client file found at {client_secrets}. Starting GAM project setup.")
-        result = gam.CallGAMCommand(["gam", "create", "project"])
-        if result:
+        api = gam.API
+        original_project_apis = api.PROJECT_APIS
+        api.PROJECT_APIS = list(GAM_PROJECT_APIS)
+        try:
+            result = gam.CallGAMCommand(["gam", "create", "project"])
+        finally:
+            api.PROJECT_APIS = original_project_apis
+        if result and not (
+            result == getattr(gam, "ACTION_FAILED_RC", 50) and client_secrets.is_file()
+        ):
             raise RuntimeError(f"GAM project setup failed with status {result}.")
         if not client_secrets.is_file():
             raise RuntimeError(
                 f"GAM project setup completed without creating the OAuth client file at {client_secrets}."
             )
+        if result:
+            print(
+                f"GAM project setup reported action warnings (status {result}); "
+                "continuing with OAuth and Workspace access checks."
+            )
+    client_secrets.chmod(0o600)
 
     commands = (
         [

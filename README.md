@@ -1,7 +1,9 @@
 # Gmail Forwarder
 
 In order to protect your main email address, it is a good idea to use a separate email address for each service. Gmail as part of Google Workplace only allows 30 email aliases.
-An alternative to email aliases are [Google Groups](https://groups.google.com/), which behaves similar to aliases.
+An alternative to email aliases is [Google Groups](https://groups.google.com/). Groups behave similar to aliases.
+
+This
 
 ## Requirements
 - Google Workplace subscription
@@ -13,15 +15,30 @@ An alternative to email aliases are [Google Groups](https://groups.google.com/),
 
 1. Copy `.env.example` to `.env`
 2. In .env, set `EMAIL_RECIPIENTS` to a whitespace-separated list of email addresses of users which are part of your Google Workspace subscriptions
-3. If you already have a GAM OAuth client file, put it at `$GAM_AUTH_DIR/client_secrets.json`. If not, make sure `$GAM_AUTH_DIR` is writable by the container's `app` user (UID 999); the setup command will guide you through GAM project creation and create the file there.
-4. In .env, set `PORT`
-5. Build the image and perform the initial authorization:
+3. In `.env`, set `PORT`.
+4. Build the image:
 
    ```sh
    docker compose build
-   docker compose run --rm gam-setup
    ```
-6. Start the app with `docker compose up` and open `http://127.0.0.1:<PORT>`
+5. Initialize GAM and complete the initial authorization. Choose **one** of these options:
+
+   - **Generate a client secrets file during setup:**
+
+     ```sh
+     docker compose run --rm gam-setup
+     ```
+
+   - **Import an existing client secrets file:**
+
+     ```sh
+     docker compose run --rm \\
+       --volume "$PWD/path/to/client_secrets.json:/import/client_secrets.json:ro" \\
+       gam-setup
+     ```
+
+   In either case, setup stores `client_secrets.json` in the Docker-managed volume. The host file in the import option is mounted read-only and is not modified. Do not run both commands; either one performs setup and authorization.
+6. Start the app with `docker compose up` and open `http://127.0.0.1:<PORT>`.
 
 
 ## Security consideration
@@ -34,9 +51,9 @@ If gmail-forwarder is exposed to the internet, you must add some kind of access-
 
 ## Technical details
 
-GAM's `gam.cfg` and cache live in the Docker-managed `gam_state` volume; `oauth2.txt` and its lock file are kept in the separate writable `gam_auth_state` volume; GAM's work directory is in `gam_work`.
+GAM's `gam.cfg` and cache live in the Docker-managed `gam_state` volume; `oauth2.txt` and its lock file are kept in the separate writable `gam_auth_state` volume; the client secret is kept in `gam_client_secrets`; GAM's work directory is in `gam_work`. Back up all four volumes securely. The host file used for import is mounted read-only and is not modified.
 
-When `client_secrets.json` is missing, setup runs `gam create project` and writes the generated file into `$GAM_AUTH_DIR`. GAM then reads the file and writes `oauth2.txt` to the `gam_auth_state` volume, before running `gam oauth create` with only the Directory API – Groups and Groups Settings API scopes preselected. GAM skips the scope-selection menu; complete the Google admin consent in the terminal/browser. The token volume persists across restarts, so this initial consent should not be needed again unless Google revokes the token or its scopes change.
+When `client_secrets.json` is missing, setup runs `gam create project` and writes the generated file into the `gam_client_secrets` volume. Project creation enables only the Admin SDK and Groups Settings APIs used by the app, plus IAM, which GAM needs to provision its service account. GAM then reads the file and writes `oauth2.txt` to the `gam_auth_state` volume, before requesting the two application OAuth scopes: Directory API – Groups and Groups Settings API. GAM also adds its required email and profile identity scopes. Complete the Google admin consent in the terminal/browser. The token and client-secret volumes persist across restarts, so this initial setup should not be needed again unless Google revokes the token or its scopes change.
 
 The UI creates a group at `name@recipient-domain`, sets `whoCanPostMessage` to `ANYONE_CAN_POST`, then adds the selected email recipient as owner of the group
 

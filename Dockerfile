@@ -10,7 +10,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 RUN groupadd --system app && useradd --system --gid app --home-dir /home/app app \
     && mkdir -p /var/lib/gam /var/lib/gam-auth /var/lib/gam-work /home/app /run/gam-client \
-    && chown -R app:app /var/lib/gam /var/lib/gam-auth /var/lib/gam-work /home/app
+    && chown -R app:app /var/lib/gam /var/lib/gam-auth /var/lib/gam-work /home/app /run/gam-client
 
 COPY pyproject.toml uv.lock ./
 COPY src ./src

@@ -1,7 +1,7 @@
 .env
 gam_cfg/
 gam_credentials/
-gam_auth/
+client_secrets.json
 .venv/
 .pytest_cache/
 .ruff_cache/
