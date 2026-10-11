@@ -1,9 +1,11 @@
 # Gmail Forwarder
 
-In order to protect your main email address, it is a good idea to use a separate email address for each service. Gmail as part of Google Workplace only allows 30 email aliases.
-An alternative to email aliases is [Google Groups](https://groups.google.com/). Groups behave similar to aliases.
+In order to protect your main email address, it is a good idea to use a separate email address for each service. Gmail as part of Google Workplace only allows [30 email aliases](https://knowledge.workspace.google.com/admin/users/add-or-delete-an-alternate-email-address-email-alias#whatEmailAlias).
 
-This
+An alternative to email aliases is [Google Groups](https://groups.google.com/). Groups behave similar to aliases. For each alias, a group is created with the main email address as owner.
+
+Group administration is organized with [GAM](https://github.com/GAM-team/GAM).
+
 
 ## Requirements
 - Google Workplace subscription
