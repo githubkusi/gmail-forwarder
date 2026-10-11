@@ -74,6 +74,8 @@ input::placeholder { color: #a5afbd; }
 .failure { color: #9e4a3d; border-color: #f0d0c8; background: #fff7f4; }
 .failure .banner-icon { color: white; background: #db7864; }
 footer { display: flex; justify-content: space-between; padding: 30px 2px 22px; color: #91a0b2; font-size: 10px; }
+.footer-link { color: inherit; text-decoration: none; }
+.footer-link:hover, .footer-link:focus-visible { color: var(--ink); }
 
 @media (max-width: 760px) {
   .shell { width: min(100% - 30px, 540px); }

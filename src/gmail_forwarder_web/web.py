@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import logging
+import os
 from pathlib import Path
 from urllib.parse import parse_qs
 
@@ -16,6 +18,7 @@ from .service import ForwarderService, Gateway
 
 _PACKAGE_DIR = Path(__file__).parent
 _templates = Jinja2Templates(directory=str(_PACKAGE_DIR / "templates"))
+_logger = logging.getLogger("uvicorn.error")
 
 
 def _media_directory(package_dir: Path = _PACKAGE_DIR) -> Path:
@@ -35,6 +38,8 @@ def create_app(settings: Settings | None = None, gateway: Gateway | None = None)
     async def lifespan(_: FastAPI):
         configured.validate()
         await run_in_threadpool(gam_gateway.setup)
+        port = os.getenv("PORT") or "8000"
+        _logger.info("Gmail Forwarder is available at http://127.0.0.1:%s", port)
         yield
 
     app = FastAPI(title="Gmail Forwarder", lifespan=lifespan)

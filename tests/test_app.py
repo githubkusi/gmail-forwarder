@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -43,6 +45,15 @@ def test_media_directory_resolves_from_installed_package(tmp_path):
 def test_normalize_local_name_with_recipient_domain():
     assert normalize_forwarder("invoices", "example.org") == "invoices@example.org"
     assert normalize_forwarder("Ops.Team", "another.test") == "Ops.Team@another.test"
+
+
+def test_startup_logs_clickable_url_with_configured_port(monkeypatch, caplog):
+    monkeypatch.setenv("PORT", "8123")
+    with caplog.at_level(logging.INFO, logger="uvicorn.error"):
+        with TestClient(configured_app()):
+            pass
+
+    assert "http://127.0.0.1:8123" in caplog.text
 
 
 def test_rejects_full_address_and_invalid_local_part():
@@ -126,6 +137,7 @@ def test_static_assets_use_relative_paths_and_are_served():
     assert 'src="static/app.js"' in response.text
     assert 'rel="icon" type="image/png" href="media/icon.png"' in response.text
     assert "Gmail Forwarder" in response.text
+    assert 'href="https://github.com/githubkusi/gmail-forwarder"' in response.text
     assert 'src="media/icon.png"' in response.text
     assert "Search forwarder" in response.text
     assert css.status_code == 200
