@@ -22,8 +22,7 @@ body {
 .shell { width: min(1080px, calc(100% - 48px)); margin: 0 auto; }
 .topbar { height: 82px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(210, 220, 232, .75); }
 .brand { display: flex; align-items: center; gap: 11px; color: var(--ink); text-decoration: none; font: 800 17px "Segoe UI", Arial, sans-serif; letter-spacing: -.7px; }
-.brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: white; background: linear-gradient(145deg, #3776f6, #2450cb); font: 800 16px "Segoe UI", Arial, sans-serif; box-shadow: 0 5px 12px #245fe833; }
-.brand-light { font-weight: 500; color: #67758a; }
+.brand-mark { display: block; flex: 0 0 auto; width: 52px; height: 34px; object-fit: contain; }
 .connection { display: flex; align-items: center; gap: 8px; color: #65758a; font-size: 12px; font-weight: 600; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #3fc49d; box-shadow: 0 0 0 4px #3fc49d1b; }
 .hero { padding: 62px 0 34px; }

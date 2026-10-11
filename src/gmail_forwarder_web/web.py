@@ -29,8 +29,9 @@ def create_app(settings: Settings | None = None, gateway: Gateway | None = None)
         await run_in_threadpool(gam_gateway.setup)
         yield
 
-    app = FastAPI(title="Forwarder Desk", lifespan=lifespan)
+    app = FastAPI(title="GmailForwarder", lifespan=lifespan)
     app.mount("/static", StaticFiles(directory=str(_PACKAGE_DIR / "static")), name="static")
+    app.mount("/media", StaticFiles(directory=str(_PACKAGE_DIR.parents[1] / "media")), name="media")
 
     def render(
         request: Request,

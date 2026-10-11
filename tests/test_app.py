@@ -110,12 +110,16 @@ def test_static_assets_use_relative_paths_and_are_served():
         response = client.get("/")
         css = client.get("/static/style.css")
         javascript = client.get("/static/app.js")
+        icon = client.get("/media/icon.jpeg")
 
     assert 'href="static/style.css"' in response.text
     assert 'src="static/app.js"' in response.text
+    assert "GmailForwarder" in response.text
+    assert 'src="media/icon.jpeg"' in response.text
     assert css.status_code == 200
     assert "--canvas" in css.text
     assert javascript.status_code == 200
+    assert icon.status_code == 200
 
 
 def test_search_matches_all_domains_and_deduplicates():

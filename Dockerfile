@@ -14,6 +14,7 @@ RUN groupadd --system app && useradd --system --gid app --home-dir /home/app app
 
 COPY pyproject.toml uv.lock ./
 COPY src ./src
+COPY media ./media
 RUN uv sync --locked --no-dev --no-editable \
     && chown -R app:app /app /var/lib/gam /var/lib/gam-work /home/app
 
