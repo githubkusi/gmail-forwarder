@@ -93,10 +93,15 @@ def initialize_gam() -> None:
     os.makedirs(work_dir, exist_ok=True)
     user_config_dir.mkdir(parents=True, exist_ok=True)
     if not client_secrets.is_file():
-        raise RuntimeError(
-            f"GAM OAuth client file not found: {client_secrets}. "
-            "Set GAM_AUTH_DIR to a directory containing client_secrets.json."
-        )
+        client_secrets.parent.mkdir(parents=True, exist_ok=True)
+        print(f"No GAM OAuth client file found at {client_secrets}. Starting GAM project setup.")
+        result = gam.CallGAMCommand(["gam", "create", "project"])
+        if result:
+            raise RuntimeError(f"GAM project setup failed with status {result}.")
+        if not client_secrets.is_file():
+            raise RuntimeError(
+                f"GAM project setup completed without creating the OAuth client file at {client_secrets}."
+            )
 
     commands = (
         [

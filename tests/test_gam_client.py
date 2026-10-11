@@ -1,4 +1,5 @@
 import sys
+import os
 from pathlib import Path
 import pytest
 
@@ -18,7 +19,10 @@ class FakeGamModule:
         if len(args) > 3 and args[1:3] == ["redirect", "stdout"]:
             output_path = Path(args[3])
             output_path.write_text("GAM output\n", encoding="utf-8")
-        return int(len(self.commands) == self.fail_on_call)
+        result = int(len(self.commands) == self.fail_on_call)
+        if not result and args[1:] == ["create", "project"]:
+            Path(os.environ["CLIENTSECRETS"]).write_text("{}", encoding="utf-8")
+        return result
 
 
 def test_add_forwarder_uses_expected_gam_sequence(monkeypatch):
@@ -82,18 +86,24 @@ def test_initial_setup_uses_readonly_client_secret_and_persistent_oauth_file(mon
     ]
 
 
-def test_initial_setup_requires_client_secret_file(monkeypatch, tmp_path):
+def test_initial_setup_creates_client_secret_with_gam_when_missing(monkeypatch, tmp_path):
     fake = FakeGamModule()
     monkeypatch.setitem(sys.modules, "gam", fake)
     monkeypatch.setenv("GAMCFGDIR", str(tmp_path / "gam-config"))
     monkeypatch.setenv("GAMUSERCONFIGDIR", str(tmp_path / "gam-auth-volume"))
-    monkeypatch.setenv("CLIENTSECRETS", str(tmp_path / "missing-client_secrets.json"))
+    client_file = tmp_path / "mounted-client" / "client_secrets.json"
+    client_file.parent.mkdir()
+    monkeypatch.setenv("CLIENTSECRETS", str(client_file))
     monkeypatch.setenv("GAM_WORK_DIR", str(tmp_path / "work"))
 
     from gmail_forwarder_web.gam_client import initialize_gam
 
-    with pytest.raises(RuntimeError, match="GAM OAuth client file not found"):
-        initialize_gam()
+    initialize_gam()
+
+    assert client_file.read_text(encoding="utf-8") == "{}"
+    assert fake.commands[0][1:] == ["create", "project"]
+    assert fake.commands[1][1:2] == ["config"]
+    assert fake.commands[2][1:] == ["oauth", "create", "scopes", ",".join(OAUTH_SCOPES)]
 
 
 def test_initial_setup_reports_failed_authorization_check(monkeypatch, tmp_path):

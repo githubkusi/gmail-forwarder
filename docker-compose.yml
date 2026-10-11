@@ -7,8 +7,7 @@ services:
     environment:
       GAMCFGDIR: /var/lib/gam
       GAMUSERCONFIGDIR: /var/lib/gam-auth
-      CLIENTSECRETS: /run/gam-client/client_secrets.json
-      HOME: /home/app
+      CLIENTSECRETS: /run/gam-client/client_secrets.json # Needed by GAM
     volumes:
       - gam_state:/var/lib/gam
       - gam_auth_state:/var/lib/gam-auth
@@ -24,6 +23,24 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+
+  gam-setup:
+    build: .
+    profiles: ["setup"]
+    env_file:
+      - .env
+    environment:
+      GAMCFGDIR: /var/lib/gam
+      GAMUSERCONFIGDIR: /var/lib/gam-auth
+      CLIENTSECRETS: /run/gam-client/client_secrets.json
+    command: ["python", "-m", "gmail_forwarder_web.gam_setup"]
+    stdin_open: true
+    tty: true
+    volumes:
+      - gam_state:/var/lib/gam
+      - gam_auth_state:/var/lib/gam-auth
+      - "${GAM_AUTH_DIR:-./gam_auth}:/run/gam-client"
+      - gam_work:/var/lib/gam-work
 
 volumes:
   gam_state:
