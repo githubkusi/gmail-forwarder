@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 from gmail_forwarder_web.config import Settings, normalize_forwarder
 from gmail_forwarder_web.gam_client import GamOperationError
-from gmail_forwarder_web.web import create_app
+from gmail_forwarder_web.web import _media_directory, create_app
 
 
 class FakeGam:
@@ -28,6 +28,16 @@ class FakeGam:
 def configured_app(gateway=None):
     settings = Settings(("admin@example.org", "reports@another.test"))
     return create_app(settings=settings, gateway=gateway or FakeGam())
+
+
+def test_media_directory_resolves_from_installed_package(tmp_path):
+    package_dir = tmp_path / ".venv/lib/python3.13/site-packages/gmail_forwarder_web"
+    package_dir.mkdir(parents=True)
+    media_directory = tmp_path / "media"
+    media_directory.mkdir()
+    (media_directory / "icon.png").touch()
+
+    assert _media_directory(package_dir) == media_directory
 
 
 def test_normalize_local_name_with_recipient_domain():
@@ -110,12 +120,14 @@ def test_static_assets_use_relative_paths_and_are_served():
         response = client.get("/")
         css = client.get("/static/style.css")
         javascript = client.get("/static/app.js")
-        icon = client.get("/media/icon.jpeg")
+        icon = client.get("/media/icon.png")
 
     assert 'href="static/style.css"' in response.text
     assert 'src="static/app.js"' in response.text
-    assert "GmailForwarder" in response.text
-    assert 'src="media/icon.jpeg"' in response.text
+    assert 'rel="icon" type="image/png" href="media/icon.png"' in response.text
+    assert "Gmail Forwarder" in response.text
+    assert 'src="media/icon.png"' in response.text
+    assert "Search forwarder" in response.text
     assert css.status_code == 200
     assert "--canvas" in css.text
     assert javascript.status_code == 200

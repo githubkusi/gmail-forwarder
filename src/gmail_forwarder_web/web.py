@@ -18,6 +18,14 @@ _PACKAGE_DIR = Path(__file__).parent
 _templates = Jinja2Templates(directory=str(_PACKAGE_DIR / "templates"))
 
 
+def _media_directory(package_dir: Path = _PACKAGE_DIR) -> Path:
+    for parent in package_dir.parents:
+        media_directory = parent / "media"
+        if (media_directory / "icon.png").is_file():
+            return media_directory
+    return package_dir / "media"
+
+
 def create_app(settings: Settings | None = None, gateway: Gateway | None = None) -> FastAPI:
     configured = settings or Settings.from_env()
     gam_gateway = gateway or GamClient()
@@ -29,9 +37,9 @@ def create_app(settings: Settings | None = None, gateway: Gateway | None = None)
         await run_in_threadpool(gam_gateway.setup)
         yield
 
-    app = FastAPI(title="GmailForwarder", lifespan=lifespan)
+    app = FastAPI(title="Gmail Forwarder", lifespan=lifespan)
     app.mount("/static", StaticFiles(directory=str(_PACKAGE_DIR / "static")), name="static")
-    app.mount("/media", StaticFiles(directory=str(_PACKAGE_DIR.parents[1] / "media")), name="media")
+    app.mount("/media", StaticFiles(directory=str(_media_directory())), name="media")
 
     def render(
         request: Request,

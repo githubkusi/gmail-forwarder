@@ -4,16 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101b2d">
-  <title>GmailForwarder</title>
+  <title>Gmail Forwarder</title>
+  <link rel="icon" type="image/png" href="media/icon.png">
   <link rel="stylesheet" href="static/style.css">
   <script src="static/app.js" defer></script>
 </head>
 <body>
   <main class="shell">
     <header class="topbar">
-      <a class="brand" href="/" aria-label="GmailForwarder home">
-        <img class="brand-mark" src="media/icon.jpeg" alt="">
-        <span>GmailForwarder</span>
+      <a class="brand" href="/" aria-label="Gmail Forwarder home">
+        <img class="brand-mark" src="media/icon.png" alt="">
+        <span class="brand-name">Gmail <span class="brand-light">Forwarder</span></span>
       </a>
       <span class="connection"><span class="status-dot"></span> Workspace tools</span>
     </header>
@@ -66,7 +67,7 @@
             <input id="search-query" name="query" type="search" maxlength="100" value="{{ query }}" placeholder="name or domain" required>
           </div>
           <p class="field-hint">Matching addresses across all configured Workspace domains.</p>
-          <button class="button button-secondary" type="submit"><span>Search groups</span><span aria-hidden="true">→</span></button>
+          <button class="button button-secondary" type="submit"><span>Search forwarder</span><span aria-hidden="true">→</span></button>
         </form>
         {% if results is not none %}
         <div class="results" aria-live="polite">
@@ -79,7 +80,7 @@
       </article>
     </section>
 
-    <footer><span>GmailForwarder</span><span>GAM-powered · Self-hosted</span></footer>
+    <footer><span>Gmail Forwarder</span><span>GAM-powered · Self-hosted</span></footer>
   </main>
 </body>
 </html>
