@@ -26,7 +26,7 @@ This
    - **Generate a client secrets file during setup:**
 
      ```sh
-     docker compose run --rm gam-setup
+     docker compose run --rm web python -m gmail_forwarder_web.gam_setup
      ```
 
    - **Import an existing client secrets file:**
@@ -34,7 +34,7 @@ This
      ```sh
      docker compose run --rm \\
        --volume "$PWD/path/to/client_secrets.json:/import/client_secrets.json:ro" \\
-       gam-setup
+       web python -m gmail_forwarder_web.gam_setup
      ```
 
    In either case, setup stores `client_secrets.json` in the Docker-managed volume. The host file in the import option is mounted read-only and is not modified. Do not run both commands; either one performs setup and authorization.
